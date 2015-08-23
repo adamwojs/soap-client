@@ -77,7 +77,7 @@ class Client implements ClientInterface
 
     /**
      * @param string            $method
-     * @param RequestInterface  $params
+     * @param RequestInterface  $request
      *
      * @return ResultInterface
      * @throws SoapFault
