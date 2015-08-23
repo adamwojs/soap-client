@@ -1,0 +1,8 @@
+
+    /**
+     * @return %type%
+     */
+    public function %method%() 
+    {
+        return $this->%property%; 
+    }

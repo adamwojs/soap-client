@@ -1,0 +1,10 @@
+    /**
+     * @param %type% $%property%
+     * @return %type%
+     */
+    public function %method%($%property%) 
+    {
+        $this->%property% = $%property%;
+
+        return $this;
+    }

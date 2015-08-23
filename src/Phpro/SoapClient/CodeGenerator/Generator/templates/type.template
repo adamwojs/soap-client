@@ -3,4 +3,6 @@
 class %name%
 {
 %properties%
+%getters%
+%setters%
 }

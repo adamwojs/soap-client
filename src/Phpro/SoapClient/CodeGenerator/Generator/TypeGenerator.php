@@ -30,7 +30,6 @@ class TypeGenerator
      */
     public function generate($type, array $properties)
     {
-        $properties  = $this->renderProperties($properties);
         return $this->renderType($type, $properties);
     }
 
@@ -60,22 +59,80 @@ class TypeGenerator
 
         return $rendered;
     }
-
+    
     /**
-     * @param string $type
-     * @param string $properties
-     *
+     * @param array $properties
+     * 
      * @return string
      */
-    protected function renderType($type, $properties)
+    protected function renderGetters(array $properties) 
+    {
+        $template = $this->getTypePropertyGetterTemplate();
+        $rendered = '';
+        foreach ($properties as $property => $type) {
+            $type = strtr($type, [
+                'long' => 'int',
+                'dateTime' => '\\DateTime',
+                'date' => '\\DateTime',
+                'boolean' => 'bool',
+            ]);
+
+            $values = [
+                '%method%' => 'get'.ucfirst($property),
+                '%property%' => $property,
+                '%type%' => $type
+            ];
+            $rendered .= $this->renderString($template, $values);            
+        }
+        
+        return $rendered;
+    }
+
+    /**
+     * @param array $properties
+     * 
+     * @return string
+     */
+    protected function renderSetters(array $properties) 
+    {
+        $template = $this->getTypePropertySetterTemplate();
+        $rendered = '';
+        foreach ($properties as $property => $type) {
+            $type = strtr($type, [
+                'long' => 'int',
+                'dateTime' => '\\DateTime',
+                'date' => '\\DateTime',
+                'boolean' => 'bool',
+            ]);
+
+            $values = [
+                '%method%' => 'set'.ucfirst($property),
+                '%property%' => $property,
+                '%type%' => $type
+            ];
+            $rendered .= $this->renderString($template, $values);            
+        }
+        
+        return $rendered;
+    }    
+    
+    /**
+     * @param string $type
+     * @param array $properties
+     *  
+     * @return string
+     */
+    protected function renderType($type, array $properties)
     {
         $template = $this->getTypeTemplate();
         $values = [
             '%name%' => ucfirst($type),
             '%namespace_block%' => $this->namespace ? sprintf("\n\nnamespace %s;", $this->namespace) : '',
-            '%properties%' => $properties,
-        ];
-
+            '%properties%' => $this->renderProperties($properties),
+            '%getters%' => $this->renderGetters($properties),
+            '%setters%' => $this->renderSetters($properties)
+        ]; 
+        
         return $this->renderString($template, $values);
     }
 
@@ -105,4 +162,20 @@ class TypeGenerator
     {
         return file_get_contents(__DIR__ . '/templates/type-property.template');
     }
+    
+    /**
+     * @return string
+     */
+    protected function getTypePropertyGetterTemplate() 
+    {
+        return file_get_contents(__DIR__ . '/templates/type-property-getter.template');
+    }
+    
+    /**
+     * @return string
+     */
+    protected function getTypePropertySetterTemplate() 
+    {
+        return file_get_contents(__DIR__ . '/templates/type-property-setter.template');
+    }    
 }
