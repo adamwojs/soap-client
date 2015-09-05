@@ -2,39 +2,39 @@
 
 namespace Phpro\SoapClient\Console\Command;
 
-use Phpro\SoapClient\Exception\RunTimeException;
-use Phpro\SoapClient\CodeGenerator\Generator\TypeGenerator;
+use Phpro\SoapClient\CodeGenerator\Generator\ClientGenerator;
 use Phpro\SoapClient\Soap\SoapClient;
+
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Class GenerateTypesCommand
+ * GenerateClientCommand.
  *
- * @package Phpro\SoapClient\Console\Command
+ * @author Adam Wójs <adam@wojs.pl>
  */
-class GenerateTypesCommand extends BaseGenerateCommand
+class GenerateClientCommand extends BaseGenerateCommand
 {
-
-    const COMMAND_NAME = 'generate:types';
-
+    const COMMAND_NAME = 'generate:client';
+    
     /**
      * Configure the command.
-     */
-    protected function configure()
+     */    
+    protected function configure() 
     {
         $this
             ->setName(self::COMMAND_NAME)
-            ->setDescription('Generates types based on WSDL.')
+            ->setDescription('Generates client class based on WSDL.')
             ->addArgument('destination', InputArgument::REQUIRED, 'Destination folder')
-            ->addOption('wsdl', null, InputOption::VALUE_REQUIRED, 'The WSDL on which you base the types')
+            ->addOption('wsdl', null, InputOption::VALUE_REQUIRED, 'The WSDL on which you base the client')
+            ->addOption('name', null, InputOption::VALUE_OPTIONAL, 'Client class name', 'Client')
             ->addOption('namespace', null, InputOption::VALUE_OPTIONAL, 'Resulting namespace')
             ->addOption('overwrite', 'o', InputOption::VALUE_NONE, 'Makes it possible to overwrite by default')
         ;
     }
-
+    
     /**
      * {@inheritdoc}
      */
@@ -50,28 +50,27 @@ class GenerateTypesCommand extends BaseGenerateCommand
             throw new RuntimeException('You MUST specify a WSDL endpoint.');
         }
 
+        $name = $input->getOption('name');
         $namespace = $input->getOption('namespace');
         $soapClient = new SoapClient($wsdl, []);
-        $types = $soapClient->getSoapTypes();
+        
+        $generator = new ClientGenerator($name, $namespace);
+        $data = $generator->generate($soapClient->getSoapFunctions());
 
-        $generator = new TypeGenerator($namespace);
-        foreach ($types as $type => $properties) {
-            // Check if file exists:
-            $file = sprintf('%s/%s.php', $destination, ucfirst($type));
-            $data = $generator->generate($type, $properties);
-
-            // Existing files ...
-            if ($this->filesystem->fileExists($file)) {
-                $output->write(sprintf('Client class %s exists. Trying to patch ...', $type));
-                $this->handleExistingFile($input, $output, $file, $type, $data);
-                continue;
-            }
-
+        // Check if file exists:
+        $file = sprintf('%s/%s.php', $destination, $name);
+        if (!$this->filesystem->fileExists($file)) {
             // New files...
             $this->filesystem->putFileContents($file, $data);
-            $output->writeln(sprintf('Generated class %s to %s', $type, $file));
+            $output->writeln(sprintf('Generated class %s to %s', $name, $file));
+        }
+        else {
+            // Existing files ...
+            $output->write(sprintf('Client class %s exists. Trying to patch ...', $name));
+            $this->handleExistingFile($input, $output, $file, $name, $data);            
         }
 
-        $output->writeln('Done');
-    }
+        $output->writeln('Done');        
+    }    
+    
 }

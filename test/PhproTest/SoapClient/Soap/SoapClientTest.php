@@ -3,6 +3,7 @@
 namespace PhproTest\SoapClient\Soap;
 
 use Phpro\SoapClient\Soap\SoapClient as PhproSoapClient;
+use Phpro\SoapClient\Soap\SoapFunction as PhproSoapFunction;
 
 /**
  * Class SoapClientTest
@@ -16,7 +17,6 @@ class SoapClientTest extends \PHPUnit_Framework_TestCase
      * Wheather API
      */
     const CDYNE_WSDL = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL';
-
 
     /**
      * @var PhproSoapClient
@@ -42,6 +42,37 @@ class SoapClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('string', $types['GetCityForecastByZIP']['ZIP']);
     }
 
+    /**
+     * @test
+     */
+    function it_should_know_all_WSDL_functions() 
+    {
+        $known = [
+            new PhproSoapFunction(
+                'GetWeatherInformation',
+                [ '$parameters' => 'GetWeatherInformation' ],
+                'GetWeatherInformationResponse'    
+            ),
+            new PhproSoapFunction(
+                'GetCityForecastByZIP',
+                [ '$parameters' => 'GetCityForecastByZIP' ],    
+                'GetCityForecastByZIPResponse'
+            ),
+            new PhproSoapFunction(
+                'GetCityWeatherByZIP',
+                [ '$parameters' => 'GetCityWeatherByZIP' ],
+                'GetCityWeatherByZIPResponse'
+            )
+        ];
+        
+        $functions = $this->client->getSoapFunctions();        
+        
+        $this->assertCount(3, $functions);
+        foreach ($known as $function) {
+            $this->assertContains($function, $functions, null, false, false);
+        }
+    }
+    
     /**
      * @test
      * @vcr vcr-enabled.yml

@@ -1,0 +1,11 @@
+
+    /**
+     * @param RequestInterface $request
+     *
+     * @return ResultInterface
+     * @throws \SoapFault
+     */
+    public function %name%(RequestInterface $request) 
+    {
+        return $this->call('%name%', $request);
+    }

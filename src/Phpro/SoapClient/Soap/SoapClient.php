@@ -16,12 +16,19 @@ class SoapClient extends \SoapClient
      *
      * @var array
      */
-    protected $types;
+    protected $types = [];
 
+    /**
+     * SOAP function derived from WSDL
+     * 
+     * @var array
+     */
+    protected $functions = [];
+    
     /**
      * Retrieve SOAP types from the WSDL and parse them
      *
-     * @return array    Array of types and their properties
+     * @return array Array of types and their properties
      */
     public function getSoapTypes()
     {
@@ -52,6 +59,49 @@ class SoapClient extends \SoapClient
         return $this->types;
     }
 
+    /**
+     * Retrieve SOAP types from the WSDL and parse them
+     *
+     * @return array Array of types and their properties
+     */    
+    public function getSoapFunctions() 
+    {
+        if ($this->functions) {
+            return $this->functions;
+        }
+        
+        foreach ($this->__getFunctions() as $soapFunction) {
+            // BFN grammar: 
+            // <function> ::= <return-type> <function-name> "(" <args-list> ")"
+            // <return-type> ::= ID
+            // <function-name> ::= ID
+            // <args-list> ::= empty | <non-empty-args-list>
+            // <non-empty-args-list> ::= <arg> | <arg> "," <non-empty-args-list>
+            // <arg> ::= <type> <parameter>
+            // <type> ::= ID 
+            // <parameter> ::= ID
+            if (!preg_match('/^(.*) (.*)\((.*)\)$/', $soapFunction, $matches)) {
+                continue;
+            }
+            
+            $function = new SoapFunction();
+            $function->setName($matches[2]);
+            $function->setReturnType($matches[1]);
+            
+            foreach (explode(', ', $matches[3]) as $argument) {
+                list($type, $name) = explode(' ', $argument, 2);
+                
+                $function->getArguments()->set($name, $type);
+            }
+
+            if (!in_array($function, $this->functions)) {
+                $this->functions[] = $function;
+            }
+        }
+        
+        return $this->functions;
+    }
+    
     /**
      * Get a SOAP type’s elements
      *
