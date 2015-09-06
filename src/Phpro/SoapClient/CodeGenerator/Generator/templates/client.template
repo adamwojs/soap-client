@@ -1,7 +1,6 @@
 <?php%namespace_block%
 
 use Phpro\SoapClient\Client as BaseClient;
-use Phpro\SoapClient\Type\RequestInterface;
 
 /**
  * Class Client

@@ -1,11 +1,9 @@
 
     /**
-     * @param RequestInterface $request
-     *
-     * @return ResultInterface
+     * @return %return_type%
      * @throws \SoapFault
      */
-    public function %name%(RequestInterface $request) 
+    public function %name%(%arguments%) 
     {
-        return $this->call('%name%', $request);
+        return $this->call('%name%'%call_arguments%);
     }
