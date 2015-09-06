@@ -53,12 +53,13 @@ class GenerateTypesCommand extends BaseGenerateCommand
         $namespace = $input->getOption('namespace');
         $soapClient = new SoapClient($wsdl, []);
         $types = $soapClient->getSoapTypes();
+        $functions = $soapClient->getSoapFunctions();
 
         $generator = new TypeGenerator($namespace);
         foreach ($types as $type => $properties) {
             // Check if file exists:
             $file = sprintf('%s/%s.php', $destination, ucfirst($type));
-            $data = $generator->generate($type, $properties);
+            $data = $generator->generate($type, $properties, $functions);
 
             // Existing files ...
             if ($this->filesystem->fileExists($file)) {

@@ -2,6 +2,8 @@
 
 namespace Phpro\SoapClient\CodeGenerator\Generator;
 
+use Phpro\SoapClient\Soap\SoapFunction;
+
 /**
  * Class TypeGenerator
  *
@@ -25,12 +27,18 @@ class TypeGenerator
     /**
      * @param $type
      * @param $properties
+     * @param $functions
      *
      * @return string
      */
-    public function generate($type, array $properties)
+    public function generate($type, array $properties, array $functions)
     {
-        return $this->renderType($type, $properties);
+        return $this->renderType(
+            $type,
+            $properties,
+            $this->isRequestType($type, $functions),
+            $this->isResultType($type, $functions)
+        );
     }
 
     /**
@@ -59,13 +67,13 @@ class TypeGenerator
 
         return $rendered;
     }
-    
+
     /**
      * @param array $properties
-     * 
+     *
      * @return string
      */
-    protected function renderGetters(array $properties) 
+    protected function renderGetters(array $properties)
     {
         $template = $this->getTypePropertyGetterTemplate();
         $rendered = '';
@@ -82,18 +90,18 @@ class TypeGenerator
                 '%property%' => $property,
                 '%type%' => $type
             ];
-            $rendered .= $this->renderString($template, $values);            
+            $rendered .= $this->renderString($template, $values);
         }
-        
+
         return $rendered;
     }
 
     /**
      * @param array $properties
-     * 
+     *
      * @return string
      */
-    protected function renderSetters(array $properties) 
+    protected function renderSetters(array $properties)
     {
         $template = $this->getTypePropertySetterTemplate();
         $rendered = '';
@@ -110,30 +118,70 @@ class TypeGenerator
                 '%property%' => $property,
                 '%type%' => $type
             ];
-            $rendered .= $this->renderString($template, $values);            
+            $rendered .= $this->renderString($template, $values);
         }
-        
+
         return $rendered;
-    }    
-    
+    }
+
     /**
      * @param string $type
      * @param array $properties
-     *  
+     * @param boolean $isRequestType
+     * @param boolean $isResultType
+     *
      * @return string
      */
-    protected function renderType($type, array $properties)
+    protected function renderType($type, array $properties, $isRequestType, $isResultType)
     {
-        $template = $this->getTypeTemplate();
+        $template = $this->getTypeTemplate($isRequestType, $isResultType);
+
         $values = [
             '%name%' => ucfirst($type),
             '%namespace_block%' => $this->namespace ? sprintf("\n\nnamespace %s;", $this->namespace) : '',
             '%properties%' => $this->renderProperties($properties),
             '%getters%' => $this->renderGetters($properties),
             '%setters%' => $this->renderSetters($properties)
-        ]; 
-        
+        ];
+
         return $this->renderString($template, $values);
+    }
+
+    /**
+     * @param string $type
+     * @param SoapFunction[] $functions
+     * @return boolean
+     */
+    protected function isResultType($type, array $functions)
+    {
+        foreach ($functions as $function) {
+            if ($function->getReturnType() === $type) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param string $type
+     * @param SoapFunction[] $functions
+     * @return boolean
+     */
+    protected function isRequestType($type, array $functions)
+    {
+        foreach ($functions as $function) {
+            if (count($function->getArguments()) > 1) {
+                continue;
+            }
+            foreach ($function->getArguments() as $argType) {
+                if ($type === $argType) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -148,10 +196,20 @@ class TypeGenerator
     }
 
     /**
+     * @param $isRequestType
+     * @param $isResultType
      * @return string
      */
-    protected function getTypeTemplate()
+    protected function getTypeTemplate($isRequestType, $isResultType)
     {
+        if ($isRequestType) {
+            return file_get_contents(__DIR__ . '/templates/type.request.template');
+        }
+
+        if ($isResultType) {
+            return file_get_contents(__DIR__.'/templates/type.result.template');
+        }
+
         return file_get_contents(__DIR__ . '/templates/type.template');
     }
 
@@ -162,20 +220,20 @@ class TypeGenerator
     {
         return file_get_contents(__DIR__ . '/templates/type-property.template');
     }
-    
+
     /**
      * @return string
      */
-    protected function getTypePropertyGetterTemplate() 
+    protected function getTypePropertyGetterTemplate()
     {
         return file_get_contents(__DIR__ . '/templates/type-property-getter.template');
     }
-    
+
     /**
      * @return string
      */
-    protected function getTypePropertySetterTemplate() 
+    protected function getTypePropertySetterTemplate()
     {
         return file_get_contents(__DIR__ . '/templates/type-property-setter.template');
-    }    
+    }
 }

@@ -1,0 +1,10 @@
+<?php%namespace_block%
+
+use Phpro\SoapClient\Type\RequestInterface;
+
+class %name% implements RequestInterface
+{
+%properties%
+%getters%
+%setters%
+}

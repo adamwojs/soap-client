@@ -1,0 +1,10 @@
+<?php%namespace_block%
+
+use Phpro\SoapClient\Type\ResultInterface;
+
+class %name% implements ResultInterface
+{
+%properties%
+%getters%
+%setters%
+}
